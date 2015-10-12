@@ -129,13 +129,19 @@ code_change(_OldVsn, State, _Extra) ->
 
 %-------------------------------------------------------------------------------
 get_socket_addr(Socket) ->
-	{ok, {Addr, _Port}} = inet:sockname(Socket),
-	Addr.
+	case inet:sockname(Socket) of
+		{ok, {Addr, _Port}} -> Addr;
+		_Any ->
+			undefined
+	end.
 
 %-------------------------------------------------------------------------------
 get_socket_port(Socket) ->
-	{ok, {_Addr, Port}} = inet:sockname(Socket),
-	Port.
+	case inet:sockname(Socket) of
+		{ok, {_Addr, Port}} -> Port;
+		_Any ->
+			undefined
+	end.
 
 %-------------------------------------------------------------------------------
 listen_socket({Start, End}, _TcpOpts, _NextPort) when End < Start ->
@@ -177,7 +183,8 @@ await_connections(Listen, Supervisor) ->
             receive
                 {ack, Worker} ->
                     %% ssl:ssl_accept/2 will return {error, not_owner} otherwise
-                    ok = gen_tcp:controlling_process(Socket, Worker)
+			% BUG - some ugly clients may disconnect in the same packet
+                    gen_tcp:controlling_process(Socket, Worker) 
             end;
         _Error ->
             exit(bad_accept)
