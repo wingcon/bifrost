@@ -47,6 +47,7 @@
 
 % Initialize the state
 init(InitialState, _) ->
+	error_logger:info_msg("Init ~w...", [?MODULE]),
     InitialState.
 
 % All users w/o any requirements

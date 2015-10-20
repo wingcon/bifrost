@@ -23,7 +23,7 @@ behaviour_info(callbacks) ->
 	%
 	% GetFun(ByteCount) -> {ok, Bytes, NextGetFun} | {done, NewState} | StateChangeError
 	%
-    [{init, 2}, % State, PropList (options) -> State
+    [{init, 2}, % State, PropList (options) -> State | {error, Reason}
      {login, 3}, 	% State, Username, Password -> {true OR false, State} | 'quit'(disconnect client)
      {check_user, 2}, 	% State, Username, {ok, NewState} | {error, Reason, NewState}, 'quit'(disconnect client)
 	 					% SECURE NOTE: Does not use check_user for testing is user available,
