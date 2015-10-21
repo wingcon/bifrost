@@ -243,7 +243,8 @@ updateState(InitialState, Socket, DstAddr) ->
 
 %-------------------------------------------------------------------------------
 establish_control_connection(Socket, State) ->
-	error_logger:warning_report({?REPORT_TAG, {control_connection, establish, State#connection_state.remote_address}}),
+	error_logger:warning_report({?REPORT_TAG, {control_connection, establish,
+							{State#connection_state.remote_address, inet:sockname(Socket), inet:peername(Socket)}}}),
     respond({gen_tcp, Socket}, 220, "FTP Server Ready"),
     control_loop(none, {gen_tcp, Socket}, State).
 
