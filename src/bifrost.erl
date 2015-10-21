@@ -234,9 +234,9 @@ supervise_connections(InitialState, ControlConnection) ->
 %-------------------------------------------------------------------------------
 updateState(InitialState, Socket, DstAddr) ->
     IpAddress = case InitialState#connection_state.ip_address of
-                    undefined 			-> get_socket_addr(Socket);
-                    {0, 0, 0, 0} 		-> get_socket_addr(Socket);
-                    {0, 0, 0, 0, 0, 0}	-> get_socket_addr(Socket);
+                    undefined 				-> get_socket_addr(Socket);
+                    {0, 0, 0, 0} 			-> get_socket_addr(Socket);
+                    {0, 0, 0, 0, 0, 0, 0, 0}-> get_socket_addr(Socket);
                     Ip -> Ip
                 end,
 	InitialState#connection_state{ip_address=IpAddress, remote_address=DstAddr}.
