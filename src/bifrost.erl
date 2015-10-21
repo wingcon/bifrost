@@ -328,12 +328,14 @@ data_connection(ControlSocket, State) ->
     respond(ControlSocket, 150),
     case establish_data_connection(State) of
         {ok, DataSocket} ->
+			error_logger:warning_report({?REPORT_TAG, {data_connection, establish,
+				{State#connection_state.remote_address, inet:sockname(DataSocket), inet:peername(DataSocket)}}}),
 			% switch socket's block
 			case inet:setopts(DataSocket, [{recbuf, State#connection_state.recv_block_size}]) of
 				ok ->
 					ok;
 				{error, Reason} ->
-					error_logger:warning_report({?REPORT_TAG, {data_connection_socket, Reason, State}})
+					error_logger:error_report({?REPORT_TAG, {data_connection, setopts, {Reason, State}}})
 			end,
 
             case State#connection_state.protection_mode of
@@ -1757,9 +1759,13 @@ passive_port_range_failure_test() ->
     execute(Child).
 
 login_test_user_with_data_socket(ControlPid, Script, passive) ->
-    meck:expect(gen_tcp, listen, fun(0, _) -> {ok, listen_socket} end),
-    meck:expect(gen_tcp, accept, fun(listen_socket) -> {ok, data_socket} end),
-    meck:expect(inet, sockname,  fun(listen_socket) -> {ok, {{127, 0, 0, 1}, 2000}} end),
+    ok = meck:expect(gen_tcp, listen, fun(0, _) -> {ok, listen_socket} end),
+    ok = meck:expect(gen_tcp, accept, fun(listen_socket) -> {ok, data_socket} end),
+
+    ok = meck:expect(inet, sockname,  fun	(listen_socket) ->	{ok, {{127, 0, 10, 1}, 2000}};
+										 	(data_socket) ->	{ok, {{127, 0, 10, 1}, 2001}} end),
+	ok = meck:expect(inet, peername, fun	(listen_socket) ->	{ok, {{127, 0, 0, 1}, 2000}};
+	                                        (data_socket) ->	{ok, {{127, 0, 0, 1}, 2001}} end),
 
     login_test_user(ControlPid, [{"PASV", "227 Entering Passive Mode (127,0,0,1,7,208)\r\n"}] ++ Script),
 	?assertMatch(
@@ -1771,6 +1777,10 @@ login_test_user_with_data_socket(ControlPid, Script, active) ->
                 fun(_, _, _) ->
                         {ok, data_socket}
                 end),
+    ok = meck:expect(inet, sockname,  fun	(listen_socket) ->	{ok, {{127, 0, 10, 1}, 2000}};
+										 	(data_socket) ->	{ok, {{127, 0, 10, 1}, 2001}} end),
+	ok = meck:expect(inet, peername, fun	(listen_socket) ->	{ok, {{127, 0, 0, 1}, 2000}};
+	                                        (data_socket) ->	{ok, {{127, 0, 0, 1}, 2001}} end),
     login_test_user(ControlPid, [{"PORT 127,0,0,1,7,208", "200 Command okay.\r\n"}] ++ Script),
 	?assertMatch({ok, #connection_state{data_port={active, {127,0,0,1}, 2000}}}, step(ControlPid)).
 
@@ -1830,7 +1840,6 @@ list_test(Mode) ->
 
                       ok = meck:expect(gen_tcp, close, fun(data_socket) -> ok end),
 					  ok = meck:expect(inet, setopts, fun(data_socket,[{recbuf, _Size}]) -> ok end),
-
                       login_test_user_with_data_socket(ControlPid,Script,Mode),
                       step(ControlPid),
                       finish(ControlPid)
