@@ -5,52 +5,48 @@
 %%%-------------------------------------------------------------------
 
 -module(gen_bifrost_server).
--export([behaviour_info/1]).
+-include("bifrost.hrl").
 
-behaviour_info(callbacks) ->
-	% FileInfo :: include/bifrost.hrl:file_info()
-	% State, NewState :: include/bifrost.hrl:connection_state()
-    % Path      :: String
-    % File Name :: String
-	%
-    % StateChangeOK     :: {ok, NewState}
-    % StateChangeError  :: {error, Reason, NewState}
-	% 						for compatibility {error, Reason} and {error, NewState} also supported
-	%
-	% StateChange :: StateChangeOK | StateChangeError
-	%
-    % HelpInfo :: {Name, Description}
-	%
-	% GetFun(ByteCount) -> {ok, Bytes, NextGetFun} | {done, NewState} | StateChangeError
-	%
-    [{init, 2}, % State, PropList (options) -> State | {error, Reason}
-     {login, 3}, 	% State, Username, Password -> {true OR false, State} | 'quit'(disconnect client)
-     {check_user, 2}, 	% State, Username, {ok, NewState} | {error, Reason, NewState}, 'quit'(disconnect client)
-	 					% SECURE NOTE: Does not use check_user for testing is user available,
-						% and return {ok, State} for all unexisting users,
-						% because USER+PASS obfuscate is user exist and bad password, or no user
-						% This function should used for connection's settings like
-						% USER requires SSL, USER can access from some IP and etc
-     {current_directory, 1}, % State -> Path
-     {make_directory, 2}, % State, Path -> StateChange
-     {change_directory, 2}, % State, Path -> StateChange
-     {list_files, 2}, % State, Path -> [FileInfo] | StateChangeError
+-type state() 		:: #connection_state{}.
+-type fileinfo() 	:: #file_info{}.
+-type filepath()	:: file:filename().
+-type stateok()		:: {ok, state()}.
+-type stateerror()	:: {error, term(), state()} | {error, term()}.
+												% {error, Reason}
+												% {error, state()}
 
-     {remove_directory, 2}, % State, Path -> StateChange
-     {remove_file, 2}, % State, Path -> StateChange
-     {put_file, 4}, % State, File Name, (append | write), Fun(Byte Count) -> StateChange
-	 				% State, File Name, notification, 	done (next command is arrived) |
-					% 									timeout (control_timeout is passed, but connection works)|
-					% 									terminated (control connection error) -> StateChange
-     {get_file, 2}, % State, Path -> {ok, GetFun, NewState} | StateChangeError
-	 				%      for compatibility {ok, GetFun} | error also supported
+-type statechange()	:: stateok() | stateerror().
+-type helpinfo()	:: {Name::string(), Description::string()}.
 
-     {file_info, 2}, % State, Path -> {ok, FileInfo} | StateChangeError
-     {rename_file, 3}, % State, From Path, To Path -> StateChange
-     {site_command, 3}, % State, CommandNameString, CommandArgsString -> StateChange
-     {site_help, 1}, % State -> {ok, [HelpInfo]} | StateChangeError
+-callback init(State::state(), Options::list(proplists:property())) ->		state() | {error, term()}.
+-callback login(State::state(), Username::string(), Passwd::string()) -> 	{boolean(), state()} | quit.
+-callback check_user(State::state(), Username::string()) -> statechange() | quit.
+% SECURE NOTE: Does not use check_user for testing is user available,
+% and return {ok, State} for all unexisting users,
+% because USER+PASS obfuscate is user exist and bad password, or no user
+% This function should used for connection's settings like
+% USER requires SSL, USER can access from some IP and etc
 
-     {disconnect, 2}]; % State, exit (QUIT command from client) or {error, Reason}  -> *unused* State Change
+-callback current_directory(State::state()) -> filepath().
+-callback make_directory(State::state(), Path::filepath()) -> statechange().
+-callback change_directory(State::state(), Path::filepath()) -> statechange().
+-callback list_files(State::state(), Path::filepath()) -> list(fileinfo()) | stateerror().
+-callback remove_directory(State::state(), Path::filepath()) -> statechange().
+-callback remove_file(State::state(), Path::filepath()) -> statechange().
 
-behaviour_info(_) ->
-    undefined.
+-callback put_file	(State::state(), Path::filepath(), append | write, fun()) -> statechange();
+					(State::state(), Path::filepath(), notification,	done | % next command is arrived
+															timeout | %control_timeout is passed, but connection works
+															terminated % control connection error
+																			) -> statechange().
+
+-callback get_file(State::state(), Path::filepath()) -> stateerror() | {ok, fun(), state()} | {ok, fun()}.
+
+-callback file_info(State::state(), Path::filepath()) -> {ok, fileinfo()} | stateerror().
+
+-callback rename_file(State::state(), FromPath::filepath(), ToPath::filepath()) -> statechange().
+
+-callback site_command(State::state(), Command::string(), Args::string()) -> statechange().
+-callback site_help(State::state()) -> {ok, list(helpinfo())} | stateerror().
+
+-callback disconnect(State::state(), exit | {error, term()}) -> statechange(). % but this state is unused

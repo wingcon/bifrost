@@ -7,7 +7,6 @@
 
 -module(bifrost_memory_server).
 -include("../include/bifrost.hrl").
--include_lib("eunit/include/eunit.hrl").
 
 -behavior(gen_bifrost_server).
 
@@ -103,8 +102,8 @@ change_directory(State, Directory) ->
             {error, State}
     end.
 
-disconnect(_, _Reason) ->
-    ok.
+disconnect(State, _Reason) ->
+	{ok, State}.
 
 % Delete a file
 remove_file(State, File) ->
@@ -376,6 +375,7 @@ set_path({dir, Root, FileInfo}, [Current | Rest], Val) ->
 
 % Tests
 -ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 fs_with_paths([], State) ->
     State;

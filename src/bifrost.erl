@@ -880,19 +880,8 @@ bf_recv({SockMod, Socket}) ->
     SockMod:recv(Socket, 0, infinity).
 
 %-------------------------------------------------------------------------------
-% Adapted from jungerl/ftpd.erl
-response_code_string(110) -> "MARK yyyy = mmmm";
-response_code_string(120) -> "Service ready in nnn minutes";
-response_code_string(125) -> "Data connection alredy open; transfere starting";
 response_code_string(150) -> "File status okay; about to open data connection";
 response_code_string(200) -> "Command okay";
-response_code_string(202) -> "Command not implemented, superfluous at this site";
-response_code_string(211) -> "System status, or system help reply";
-response_code_string(212) -> "Directory status";
-response_code_string(213) -> "File status";
-response_code_string(214) -> "Help message";
-response_code_string(215) -> "UNIX system type";
-response_code_string(220) -> "Service ready for user";
 response_code_string(221) -> "Service closing control connection";
 response_code_string(225) -> "Data connection open; no transfere in progress";
 response_code_string(226) -> "Closing data connection";
@@ -912,14 +901,9 @@ response_code_string(452) -> "Requested action not taken";
 response_code_string(500) -> "Syntax error, command unrecognized";
 response_code_string(501) -> "Syntax error in parameters or arguments";
 response_code_string(502) -> "Command not implemented";
-response_code_string(503) -> "Bad sequence of commands";
-response_code_string(504) -> "Command not implemented for that parameter";
 response_code_string(530) -> "Not logged in";
-response_code_string(532) -> "Need account for storing files";
 response_code_string(550) -> "Requested action not taken";
-response_code_string(551) -> "Requested action aborted: page type unkown";
 response_code_string(552) -> "Requested file action aborted";
-response_code_string(553) -> "Requested action not taken";
 response_code_string(_) -> "N/A".
 
 %-------------------------------------------------------------------------------
