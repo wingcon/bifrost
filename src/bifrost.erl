@@ -359,8 +359,8 @@ establish_data_connection(#connection_state{pasv_listen={passive, Listen, _}}) -
     gen_tcp:accept(Listen);
 
 % active -- establishes an outbound connection
-establish_data_connection(#connection_state{data_port={active, Addr, Port}}) ->
-    gen_tcp:connect(Addr, Port, [{active, false}, binary]).
+establish_data_connection(#connection_state{data_port={active, Addr, Port}, ip_address=LocalIpAddr}) ->
+    gen_tcp:connect(Addr, Port, [{active, false}, {ip, LocalIpAddr}, binary]).
 
 %-------------------------------------------------------------------------------
 pasv_connection(ControlSocket, State) ->
